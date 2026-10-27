@@ -28,7 +28,7 @@ vm.runInNewContext(code,context);
 const nav=elements.keymap.children[0],nums=elements.keymap.children[1];
 assert.equal(nav.id,'duobao-navigation');
 assert.equal(nums.id,'duobao-numbers');
-assert.deepEqual(nav.children.map(x=>x.id||''),['key_sleft','key_up','key_sright','key_left','key_ok','key_right','','key_down','']);
+assert.deepEqual(nav.children.map(x=>x.id||''),['key_sleft','key_up','key_sright','key_left','key_ok','key_right','span','key_down','span']);
 assert.deepEqual(nums.children.map(x=>x.id),['key_1','key_2','key_3','key_4','key_5','key_6','key_7','key_8','key_9','key_star','key_0','key_pound']);
 assert.equal(elements.key_ok.textContent,'OK');
 assert.equal(elements.key_up.onmousedown(),'key_up','Reparenting must not remove original emulator handlers');
