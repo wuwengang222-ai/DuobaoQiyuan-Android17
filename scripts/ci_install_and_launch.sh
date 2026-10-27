@@ -69,6 +69,14 @@ done
 if [ "$launched" -ne 1 ]; then
   echo "ERROR: main Activity did not launch; installed APK isn't yet proof of Android compatibility" >&2
   adb shell dumpsys package "$pkg" > build/smoke/package_diagnostics.txt || true
+  echo "Is Android capable of launching the built-in Settings activity?" >&2
+  if adb shell am start -W -a android.settings.SETTINGS > build/smoke/android_settings_launch.txt 2>&1; then
+    echo "System Settings launch succeeded; installed app Activity resolution requires investigation." >&2
+  else
+    echo "System Settings launch also failed: Android emulator system services may be unhealthy." >&2
+  fi
+  echo "Resolve launcher using PackageManager:"
+  adb shell cmd package resolve-activity --brief --user 0 -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p "$pkg" > build/smoke/resolved_launcher.txt 2>&1 || true
   adb logcat -d -t 300 -s PackageManager:E AndroidRuntime:E ActivityTaskManager:E ActivityManager:E > build/smoke/activity_launch_error.log || true
   exit 22
 fi
