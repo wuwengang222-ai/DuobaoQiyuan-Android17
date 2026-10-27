@@ -31,6 +31,7 @@ if ! grep -qx "$EXPECTED_API" build/smoke/api_level.txt; then
 fi
 wait_for 'VMRP WASM postRun reached, chapter=1' 90
 wait_for 'Canvas changed after engine startup; chapter=1' 45
+python3 scripts/adb_assert_featurephone_ui.py
 if adb logcat -d -s DuobaoRuntime:E | grep -q 'VMRP runtime failure'; then
   echo 'EMULATOR FAILURE: chapter 1 runtime missing required files' >&2; exit 1
 fi
