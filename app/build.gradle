@@ -1,0 +1,38 @@
+plugins { id 'com.android.application' }
+android {
+  namespace 'com.duobao.duology'
+  compileSdk 37
+  defaultConfig {
+    applicationId 'com.duobao.duology'
+    minSdk 26
+    targetSdk 35
+    versionCode 9
+    versionName '0.9-ci-emulator-preflight-experimental'
+  }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.13.0'
+    // Bundled offline Chinese text model, not the Google Play Services model.
+    implementation 'com.google.mlkit:text-recognition-chinese:16.0.1'
+}
+
+// Fail the build rather than shipping a non-playable shell APK.
+tasks.register('requireVmrpRuntime') {
+  doLast {
+    def base = file('src/main/assets')
+    def need = ['index.html','vmrp.js','vmrp.wasm','duobao_bridge.js','midi.js','fs/cfunction.ext','fs/mythroad/mpc.mrp','fs/mythroad/ydqtwo.mrp','fs/mythroad/plugins/netpay.mrp','fs/mythroad/plugins/flaengine.mrp','fs/mythroad/plugins/ose/brwcore.mrp','fs/mythroad/system/gb12.uc2','fs/mythroad/system/gb16.uc2','games/part1.mrp','games/part2.mrp']
+    def absent = need.findAll { !new File(base,it).isFile() || new File(base,it).length() == 0 }
+    if (!absent.isEmpty()) throw new GradleException('Missing VMRP runtime assets: ' + absent)
+    def magic = new byte[4]
+    new File(base, 'vmrp.wasm').withInputStream { it.read(magic) }
+    if (!java.util.Arrays.equals(magic, new byte[]{0,97,115,109}))
+      throw new GradleException('Invalid WebAssembly header: assets/vmrp.wasm')
+    def html = new File(base, 'index.html').getText('UTF-8')
+    if (!html.contains('duobao_bridge.js') || html.contains('src="./fs.js"'))
+      throw new GradleException('VMRP HTML loader was not correctly adapted')
+    if (!html.contains('src="./vmrp.js"'))
+      throw new GradleException('Missing VMRP executable JS import')
+  }
+}
+tasks.named('preBuild').configure { dependsOn 'requireVmrpRuntime' }

@@ -1,0 +1,22 @@
+name: Static tests for public source (without proprietary games)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Unit tests (no game execution, no Android)
+        run: bash scripts/run_public_source_tests.sh
+      - name: Verify public checkout contains no original game ROMs
+        run: python3 scripts/check_public_tree.py
