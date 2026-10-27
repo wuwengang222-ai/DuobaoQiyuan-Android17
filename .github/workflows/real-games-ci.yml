@@ -70,14 +70,11 @@ jobs:
           emulator-boot-timeout: 720
           cores: 2
           ram-size: 2048M
+          disk-size: 8192M
           target: google_apis
           arch: x86_64
           emulator-options: -no-window -no-snapshot -gpu swiftshader -noaudio -no-boot-anim -no-metrics -camera-back none
-          script: |
-            export EXPECTED_API='${{ matrix.emulator_api }}'
-            python3 -m pip install Pillow
-            bash scripts/ci_emulator_smoke.sh
-            echo 'NOTE: Not a completed story playthrough, no actual auto-ending validation.'
+          script: python3 -m pip install Pillow && EXPECTED_API='${{ matrix.emulator_api }}' bash scripts/ci_emulator_smoke.sh
       - name: Remove copyrighted game files, temporary screenshots and APK
         if: always()
         shell: bash
