@@ -50,5 +50,18 @@ window.addEventListener('resize',resize);
 window.addEventListener('orientationchange',()=>setTimeout(resize,150));
 resize();
 main.dataset.duobaoPhoneKeys='ready';
+requestAnimationFrame(()=>{
+ const up=document.getElementById('key_up').getBoundingClientRect();
+ const down=document.getElementById('key_down').getBoundingClientRect();
+ const one=document.getElementById('key_1').getBoundingClientRect();
+ const nine=document.getElementById('key_9').getBoundingClientRect();
+ const hash=document.getElementById('key_pound').getBoundingClientRect();
+ const rows=document.getElementById('duobao-numbers');
+ const valid=up.height>0&&down.height>0&&one.height>0&&
+   down.bottom<=one.top&&one.top<nine.top&&nine.top<hash.top&&
+   getComputedStyle(rows).display==='grid';
+ if(valid)console.info('Duobao: phone keypad geometry verified: D-pad above numbers');
+ else console.error('Duobao: phone keypad geometry check FAILED');
+});
 console.info('Duobao: feature-phone directional keys above 3x4 numeric keypad');
 })();
