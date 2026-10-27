@@ -5,12 +5,17 @@ on:
     paths:
       - '.github/workflows/real-games-ci.yml'
       - 'analysis/verify_ending_in_mrp.py'
+      - 'scripts/ci_emulator_smoke.sh'
 permissions:
   contents: read
 jobs:
   verify-game-files-and-launch:
     runs-on: ubuntu-24.04
-    timeout-minutes: 50
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        emulator_api: ['36','37.0']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -54,14 +59,22 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           test -c /dev/kvm
-      - name: Android 17 API37 actual two-MRP startup and manual chapter switch
+      - name: Validate adb server before emulator bootstrap
+        run: |
+          adb start-server
+          adb devices -l
+      - name: Android API matrix actual two-MRP startup and manual chapter switch
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: '37.0'
+          api-level: ${{ matrix.emulator_api }}
+          emulator-boot-timeout: 720
+          cores: 2
+          ram-size: 2048M
           target: google_apis
           arch: x86_64
-          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          emulator-options: -no-window -no-snapshot -gpu swiftshader -noaudio -no-boot-anim -no-metrics -camera-back none
           script: |
+            export EXPECTED_API='${{ matrix.emulator_api }}'
             python3 -m pip install Pillow
             bash scripts/ci_emulator_smoke.sh
             echo 'NOTE: Not a completed story playthrough, no actual auto-ending validation.'
