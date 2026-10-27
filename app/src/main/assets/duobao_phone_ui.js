@@ -22,6 +22,10 @@ for(const id of ['key_sleft','key_up','key_sright','key_left','key_ok','key_righ
 }
 for(const id of ['key_1','key_2','key_3','key_4','key_5','key_6','key_7','key_8','key_9','key_star','key_0','key_pound'])d.appendChild(document.getElementById(id));
 map.replaceChildren(n,d);
+const legacyImport=document.getElementById('import');
+if(legacyImport&&legacyImport.parentElement)legacyImport.parentElement.style.display='none';
+const legacyInstructions=main.querySelector('p');
+if(legacyInstructions)legacyInstructions.style.display='none';
 const toggle=document.createElement('button');
 toggle.id='duobao-screen-toggle';toggle.type='button';toggle.textContent='⛶ 放大';
 toggle.setAttribute('aria-label','最大化游戏画面，再次点击显示按键');
