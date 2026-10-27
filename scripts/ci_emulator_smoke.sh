@@ -46,6 +46,16 @@ if adb logcat -d -s DuobaoRuntime:E | grep -q 'VMRP runtime failure'; then
   echo 'EMULATOR FAILURE: runtime load error' >&2; exit 1
 fi
 adb exec-out screencap -p > build/smoke/chapter2.png
+# Test that the completed chapter preference survives process death.
+# Force-stop does not wipe application data. This tests preference persistence,
+# not a real role-playing-game save and resume.
+adb shell am force-stop com.duobao.duology
+adb logcat -c
+adb shell am start -n com.duobao.duology/.MainActivity
+wait_for 'VMRP WASM postRun reached, chapter=2' 90
+wait_for 'Canvas changed after engine startup; chapter=2' 45
+echo 'PASS: chapter 2 preference survives force-stop and process restart.'
+
 adb logcat -d -v time -s DuobaoRuntime:I DuobaoWebView:I DuobaoEnding:I AndroidRuntime:E chromium:E > build/smoke/logcat.txt
 if grep -q 'FATAL EXCEPTION' build/smoke/logcat.txt; then
   echo 'EMULATOR FAILURE: Android process crash' >&2; exit 1
@@ -63,4 +73,4 @@ PY
 # Even a nonuniform screenshot cannot prove gameplay. The CI artifact must
 # still be labeled an emulator smoke test, not a verified complete game.
 echo "PASS: Android API $EXPECTED_API initialized real VMRP with two historical MRP files, manual chapter switch reached chapter 2."
-echo 'NOT PROVEN: both games playable, OCR accuracy, automatic plot handoff, OnePlus 13.'
+echo 'NOT PROVEN: full RPG gameplay, real game save restore, ending OCR accuracy, automatic plot handoff, OnePlus 13.'
