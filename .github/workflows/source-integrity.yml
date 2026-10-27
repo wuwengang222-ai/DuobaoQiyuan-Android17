@@ -1,0 +1,44 @@
+name: Validate public source
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure proprietary binaries are not publicly committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find . -type f \( -name '*.mrp' -o -name '*.apk' -o -name '*.wasm' \) -print -quit | grep -q .; then
+            echo "ERROR: Public source repository contains game or runtime binaries"
+            exit 1
+          fi
+      - name: Require complete project sources (fail clearly until uploaded)
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            scripts/run_public_source_tests.sh
+            app/src/main/java/com/duobao/duology/MainActivity.java
+            app/src/main/assets/duobao_bridge.js
+            app/build.gradle
+          )
+          for f in "${required[@]}"; do
+            if [[ ! -f "$f" ]]; then
+              echo "::error title=Source incomplete::Missing $f. Import the source tree from V10 before building."
+              exit 1
+            fi
+          done
+          bash scripts/run_public_source_tests.sh
