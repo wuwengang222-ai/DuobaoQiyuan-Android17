@@ -6,6 +6,21 @@ set -euo pipefail
 mkdir -p build/smoke
 APK=app/build/outputs/apk/debug/app-debug.apk
 test -s "$APK"
+stable=0
+for attempt in $(seq 1 45); do
+  if adb shell cmd package list packages -3 >/dev/null 2>&1; then
+    stable=$((stable+1))
+    if (( stable >= 3 )); then break; fi
+  else
+    stable=0
+  fi
+  sleep 2
+done
+if (( stable < 3 )); then
+  echo "EMULATOR FAILURE: PackageManager not stable after boot" >&2
+  adb logcat -d -v time -t 300 -s AndroidRuntime:E SystemServer:E PackageManager:E | tail -120 || true
+  exit 1
+fi
 adb install -r "$APK"
 adb logcat -c
 adb shell am start -n com.duobao.duology/.MainActivity
