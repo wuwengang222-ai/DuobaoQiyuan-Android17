@@ -36,4 +36,8 @@ def main(original):
         if actual!=offset: raise AssertionError('Changed ending scene or wrong game file')
     print('PASS: 4 exact end-scene marker offsets verified in original MRP1')
 
-if __name__=='__main__': main(sys.argv[1] if len(sys.argv)>1 else '/mnt/data/319011_240320_gdbqy.mrp')
+if __name__=='__main__':
+    # Build runner, Codespaces and local use all resolve the user's MRP from
+    # project-owned temporary assets, not from the model container filesystem.
+    default = Path(__file__).resolve().parents[1] / 'app/src/main/assets/games/part1.mrp'
+    main(sys.argv[1] if len(sys.argv)>1 else default)
