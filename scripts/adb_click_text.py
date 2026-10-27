@@ -40,7 +40,7 @@ while time.monotonic() < deadline:
             if not label or args.label not in label:
                 continue
             bounds = node.attrib.get('bounds', '')
-            found = re.match(r'\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]', bounds)
+            found = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', bounds)
             if not found:
                 continue
             x1, y1, x2, y2 = map(int, found.groups())
