@@ -1,0 +1,102 @@
+name: VMRP engine + Android 17 smoke (upstream fixture, NOT Duobao games)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/runtime-smoke.yml'
+      - 'scripts/prepare_runtime.py'
+      - 'app/**'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Use an upstream VMRP fixture, NOT either Duobao game
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/games
+          curl --fail --location --retry 3 --silent --show-error \
+            https://raw.githubusercontent.com/vmrp/vmrp/master/wasm/dist/fs/mythroad/dsm_gm.mrp \
+            --output app/src/main/assets/games/part1.mrp
+          test -s app/src/main/assets/games/part1.mrp
+          cp app/src/main/assets/games/part1.mrp app/src/main/assets/games/part2.mrp
+          echo 'Upstream fixture only; this is NOT a test of either Duobao storyline.'
+      - name: Download real VMRP wasm/js and platform files
+        run: python3 scripts/prepare_runtime.py
+      - name: Validate actual WebAssembly and JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check app/src/main/assets/vmrp.js
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const bytes = fs.readFileSync('app/src/main/assets/vmrp.wasm');
+          if (bytes.length < 10000 || !WebAssembly.validate(bytes)) {
+            throw Error('Downloaded VMRP wasm was not valid');
+          }
+          const html=fs.readFileSync('app/src/main/assets/index.html','utf8');
+          if (!html.includes('duobao_bridge.js') || html.includes('src="./fs.js"')) {
+            throw Error('VMRP HTML loader did not include project bridge');
+          }
+          console.log('Real VMRP WASM validated:', bytes.length, 'bytes');
+          NODE
+      - name: Install API 37 build tools and compile debug APK (fixture ONLY)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-37' 'build-tools;37.0.0'
+          gradle :app:assembleDebug --stacktrace --no-daemon
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          echo 'Android APK compiled with UPSTREAM FIXTURE (not the actual two games).'
+      - name: Enable KVM for Android 17 emulator
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+      - name: API 37 emulator boot and WebAssembly runtime check (fixture ONLY)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: '37.0'
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            set -e
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -n com.duobao.duology/.MainActivity
+            adb shell getprop ro.build.version.sdk
+            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = "37"
+            observed=0
+            for i in $(seq 1 90); do
+              if adb logcat -d -s DuobaoRuntime:I | grep -Fq 'VMRP WASM postRun reached, chapter=1'; then
+                observed=1
+                break
+              fi
+              sleep 2
+            done
+            adb logcat -d -v brief -s DuobaoRuntime:I DuobaoRuntime:E AndroidRuntime:E | tail -120
+            test "$observed" = "1"
+            echo 'VMRP WASM postRun reached on API37. Not proof either Duobao game is playable.'
+      - name: Cleanup temporary runtime and demo game binaries
+        if: always()
+        shell: bash
+        run: |
+          rm -rf app/src/main/assets/games
+          rm -f app/src/main/assets/vmrp.wasm app/src/main/assets/vmrp.js
+          rm -rf app/build
