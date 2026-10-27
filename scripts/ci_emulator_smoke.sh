@@ -6,24 +6,8 @@ set -euo pipefail
 mkdir -p build/smoke
 APK=app/build/outputs/apk/debug/app-debug.apk
 test -s "$APK"
-stable=0
-for attempt in $(seq 1 45); do
-  if adb shell cmd package list packages -3 >/dev/null 2>&1; then
-    stable=$((stable+1))
-    if (( stable >= 3 )); then break; fi
-  else
-    stable=0
-  fi
-  sleep 2
-done
-if (( stable < 3 )); then
-  echo "EMULATOR FAILURE: PackageManager not stable after boot" >&2
-  adb logcat -d -v time -t 300 -s AndroidRuntime:E SystemServer:E PackageManager:E | tail -120 || true
-  exit 1
-fi
-adb install -r "$APK"
-adb logcat -c
-adb shell am start -n com.duobao.duology/.MainActivity
+# Verify install and real Android package/launcher availability on API 37.
+bash scripts/ci_install_and_launch.sh "$APK"
 
 wait_for() {
   local phrase="$1" max=${2:-90}
@@ -78,5 +62,5 @@ for chapter in (1,2):
 PY
 # Even a nonuniform screenshot cannot prove gameplay. The CI artifact must
 # still be labeled an emulator smoke test, not a verified complete game.
-echo "PASS: Android API $EXPECTED_API launched VMRP and manual transition loaded second VMRP fixture."
+echo "PASS: Android API $EXPECTED_API initialized real VMRP with two historical MRP files, manual chapter switch reached chapter 2."
 echo 'NOT PROVEN: both games playable, OCR accuracy, automatic plot handoff, OnePlus 13.'
