@@ -16,7 +16,8 @@ bash scripts/ci_install_and_launch.sh "$apk"
 for i in $(seq 1 75); do
   if adb logcat -d -s DuobaoRuntime:I | grep -Fq 'VMRP WASM postRun reached, chapter=1'; then
     echo "VMRP postRun signal confirmed on Android API $EXPECTED_API"
-    echo 'This confirms engine initialization with upstream fixture only.'
+    python3 scripts/adb_assert_featurephone_ui.py
+    echo 'This confirms UI arrangement and upstream fixture engine initialization, not RPG playthrough.'
     exit 0
   fi
   sleep 2
