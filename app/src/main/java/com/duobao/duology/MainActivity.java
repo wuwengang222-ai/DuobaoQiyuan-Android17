@@ -175,6 +175,7 @@ public final class MainActivity extends Activity {
                         return;
                     }
                     if (chapters.onEvent(1, DuologyStateMachine.Event.STORY_COMPLETE)) {
+                        Log.i("DuobaoRuntime", "Chapter 1 save flushed, transitioning to chapter=2");
                         loadChapter(2);
                     }
                 });
@@ -226,10 +227,12 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, "true".equals(result) ? "进度已保存" : "保存未成功", Toast.LENGTH_SHORT).show());
     }
     private void confirmManualHandoff() {
+        Log.i("DuobaoRuntime", "Manual chapter transition confirmation requested");
         new AlertDialog.Builder(this).setTitle("仅通关后使用")
             .setMessage("此功能不是自动结局识别。确认你已经看完第一部结局，程序将先保存第一部进度，"
                 + "再进入第二部；否则请取消。")
             .setPositiveButton("已通关，进入第二部", (dialog, which) -> {
+                Log.i("DuobaoRuntime", "Manual chapter confirmation pressed");
                 if (chapters.chapter() != 1 || awaitingSaveForTransition || view == null) return;
                 awaitingSaveForTransition = true;
                 view.evaluateJavascript("window.duobaoFlushAndSwitch && window.duobaoFlushAndSwitch()", null);
