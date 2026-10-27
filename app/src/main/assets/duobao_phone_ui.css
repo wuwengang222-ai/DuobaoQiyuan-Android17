@@ -22,7 +22,7 @@ body{color:#fff}
 #duobao-numbers button{background:linear-gradient(#303c52,#202c3c)!important}
 #duobao-screen-toggle{position:absolute;left:8px;top:calc(env(safe-area-inset-top,0px) + 4px);z-index:4;min-width:60px;height:30px;border:1px solid #607b9a;border-radius:6px;background:#1b304bdd;color:#fff;font-size:12px;font-weight:650}
 #duobao-screen-toggle:active{background:#456889}
-#main>p,#main>div:last-child:has(#import){display:none!important}
+#main>p,#main>div:has(#import),#import,#files{display:none!important}
 #main.duobao-max-screen #keymap{display:none!important}
 #main.duobao-max-screen #screen{flex:1 1 auto}
 @media (orientation:landscape) and (max-height:540px){
