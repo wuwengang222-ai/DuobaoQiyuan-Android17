@@ -16,7 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        emulator_api: ['36', '37.0']
+        include:
+          - emulator_api: '36'
+            image_target: google_apis
+          - emulator_api: '37.0'
+            image_target: google_apis_ps16k
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -88,7 +92,7 @@ jobs:
           cores: 2
           ram-size: 6144M
           disk-size: 8192M
-          target: google_apis
+          target: ${{ matrix.image_target }}
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader -noaudio -no-boot-anim -no-metrics -camera-back none
