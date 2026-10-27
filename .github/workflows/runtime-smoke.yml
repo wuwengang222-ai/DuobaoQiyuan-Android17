@@ -12,7 +12,7 @@ permissions:
   contents: read
 jobs:
   probe:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner_os }}
     timeout-minutes: 55
     strategy:
       fail-fast: false
@@ -20,8 +20,10 @@ jobs:
         include:
           - emulator_api: '36'
             image_target: google_apis
+            runner_os: ubuntu-24.04
           - emulator_api: '37.0'
             image_target: google_apis_ps16k
+            runner_os: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
