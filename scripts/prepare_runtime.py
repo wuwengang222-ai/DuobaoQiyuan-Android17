@@ -93,6 +93,23 @@ def main():
       #keymap button{font-size:1.1em;color:#1d2739;background:#ead8ac;border-radius:8px;border:0}
       #status {color:#e3c78a;}
       </style></head>''')
+    # Integrate responsive classic feature-phone layout. Keep every original
+    # VMRP button node and its JS callbacks; JS moves the nodes after the
+    # upstream keyboard listener is registered. Both sources live locally.
+    phone_css = (assets / 'duobao_phone_ui.css').read_text(encoding='utf-8')
+    phone_js = (assets / 'duobao_phone_ui.js').read_text(encoding='utf-8')
+    if not phone_css.strip() or not phone_js.strip():
+        raise RuntimeError('Missing classic feature-phone UI source')
+    if '</style>' in phone_css.lower() or '</script>' in phone_js.lower():
+        raise RuntimeError('Unsafe closing HTML tag in phone UI bundle')
+    html = html.replace('</head>', '<style id="duobao-phone-style">\\n'
+                        + phone_css + '\\n</style></head>', 1)
+    insertion_point = '<script src="./duobao_bridge.js"></script>'
+    if html.count(insertion_point) != 1:
+        raise RuntimeError('VMRP HTML bridge location unexpectedly changed')
+    html = html.replace(insertion_point,
+                        '<script id="duobao-phone-ui">\\n' + phone_js
+                        + '\\n</script>\\n' + insertion_point, 1)
     # Preserve the upstream keymap DOM and ID fields, but simplify the original
     # donation/help text. It is not required to run the game.
     index = assets / 'index.html'
@@ -101,7 +118,8 @@ def main():
     # Reproducible audit metadata. This is NOT a game-running test.
     import json
     important = ['index.html','vmrp.js','vmrp.wasm','duobao_bridge.js',
-                 'midi.js','VMRP_LICENSE.txt','games/part1.mrp','games/part2.mrp']
+                 'midi.js','VMRP_LICENSE.txt','duobao_phone_ui.css','duobao_phone_ui.js',
+                 'games/part1.mrp','games/part2.mrp']
     manifest = {name: {'bytes':(assets/name).stat().st_size,
                        'sha256':hashlib.sha256((assets/name).read_bytes()).hexdigest()}
                 for name in important}
