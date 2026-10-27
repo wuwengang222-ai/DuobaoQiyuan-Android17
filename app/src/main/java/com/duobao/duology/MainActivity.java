@@ -188,16 +188,24 @@ public final class MainActivity extends Activity {
         chapterOptions.setText("章节");
         chapterOptions.setTextSize(12);
         chapterOptions.setAllCaps(false);
-        chapterOptions.setOnClickListener(v -> showChapterMenu());
+        chapterOptions.setOnClickListener(v -> {
+            Log.i("DuobaoRuntime", "Chapter menu control tapped");
+            showChapterMenu();
+        });
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 (int) (60 * getResources().getDisplayMetrics().density),
                 (int) (44 * getResources().getDisplayMetrics().density),
                 Gravity.END | Gravity.TOP);
+        // Keep chapter menu away from the Android status-bar gesture region,
+        // especially on compact 320x640 emulator profiles (the old control
+        // occupied y=0..44 and tapping its center hit the system status bar).
+        lp.topMargin = (int) (48 * getResources().getDisplayMetrics().density);
         root.addView(chapterOptions, lp);
         setContentView(root);
         loadChapter(current);
     }
     private void showChapterMenu() {
+        Log.i("DuobaoRuntime", "Opening chapter options dialog; chapter=" + chapters.chapter());
         if (chapters.chapter() == 2) {
             new AlertDialog.Builder(this).setTitle("已进入第二部")
                 .setMessage("两部游戏的存档分别保存。按“保存进度”会写入第二部当前进度。")
