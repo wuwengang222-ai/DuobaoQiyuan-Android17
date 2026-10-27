@@ -2,7 +2,9 @@ name: Verify both historical MRP games on Android 17 (ephemeral, no APK release)
 on:
   workflow_dispatch:
   push:
-    paths: ['.github/workflows/real-games-ci.yml']
+    paths:
+      - '.github/workflows/real-games-ci.yml'
+      - 'analysis/verify_ending_in_mrp.py'
 permissions:
   contents: read
 jobs:
