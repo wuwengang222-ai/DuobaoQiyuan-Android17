@@ -6,6 +6,7 @@ on:
       - '.github/workflows/runtime-smoke.yml'
       - 'scripts/prepare_runtime.py'
       - 'app/**'
+      - 'scripts/ci_fixture_smoke.sh'
 permissions:
   contents: read
 jobs:
@@ -86,30 +87,12 @@ jobs:
           emulator-boot-timeout: 720
           cores: 2
           ram-size: 2048M
+          disk-size: 8192M
           target: google_apis
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -no-snapshot -gpu swiftshader -noaudio -no-boot-anim -no-metrics -camera-back none
-          script: |
-            set -e
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb logcat -c
-            adb shell am start -n com.duobao.duology/.MainActivity
-            adb shell getprop ro.build.version.sdk
-            expected_api='${{ matrix.emulator_api }}'
-            expected_api="${expected_api%%.*}"
-            test "$(adb shell getprop ro.build.version.sdk | tr -d '\r')" = "$expected_api"
-            observed=0
-            for i in $(seq 1 90); do
-              if adb logcat -d -s DuobaoRuntime:I | grep -Fq 'VMRP WASM postRun reached, chapter=1'; then
-                observed=1
-                break
-              fi
-              sleep 2
-            done
-            adb logcat -d -v brief -s DuobaoRuntime:I DuobaoRuntime:E AndroidRuntime:E | tail -120
-            test "$observed" = "1"
-            echo "VMRP WASM postRun reached on API $expected_api. This fixture is NOT either Duobao game."
+          script: EXPECTED_API='${{ matrix.emulator_api }}' bash scripts/ci_fixture_smoke.sh
       - name: Print emulator diagnosis on failed boots
         if: failure()
         shell: bash
