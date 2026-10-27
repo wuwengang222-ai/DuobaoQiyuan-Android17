@@ -9,9 +9,11 @@
 - ✅ 已将 Android、JS 桥接、剧情状态机、存档代码与源码测试完整上传到此公开仓库。
 - ✅ GitHub Actions 的两个源码检查工作流通过。
 - ✅ 公共云端作业已实际下载 VMRP 的 JS/WASM，并通过了 WASM 文件格式验证；不再是模拟占位文件。
-- ✅ 已用上游 VMRP 的测试文件**而非夺宝奇缘游戏**在云端编译过一次调试 APK（stable Android SDK 36）。
+- ✅ 已用上游 VMRP 的测试文件**而非夺宝奇缘游戏**在云端编译调试 APK（compileSdk 36），并提供短期有效的引擎测试 APK artifact。这**不是**双游戏成品。
 - ✅ 在临时作业中已下载到与用户上传文件 SHA256 一致的两部 MRP；不会将其提交公开源码树。
-- 🔄 Android 17 / API 37 的真实模拟器启动验证仍按 GitHub Actions 日志判定，可能失败，需要进一步修复。
+- ✅ [真实游戏CI 40494278386](https://github.com/wuwengang222-ai/DuobaoQiyuan-Android17/actions/runs/40494278386)：Android 16/API36 内，两个原版 MRP 以 VMRP 加载并产生画面变化，能手动切到第二部；强制停止/重启后仍进入第二部。
+- ⚠️ Android 17/API37 模拟器启动尚未验收：`adb install` 成功、PackageManager 能识别 APK 和 MAIN/LAUNCHER Activity，但系统 `am start` 报 `Error type 3`，甚至系统设置应用也无法正常启动，说明该模拟器的系统服务异常。正在验证不同运行器配置。
+- ✅ 已为 Android 编译包加入合并 Manifest 无网络权限检查，并为测试脚本增加 PackageManager/ActivityManager 稳定性诊断。
 - ❌ 还没有第一部真实通关的自动衔接验收。
 - ❌ 没有经过验证的可分发最终 APK。
 
