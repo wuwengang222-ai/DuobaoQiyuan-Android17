@@ -7,6 +7,15 @@ apk="${1:?APK path is required}"
 pkg="com.duobao.duology"
 activity="$pkg/.MainActivity"
 test -s "$apk"
+aapt_bin="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}/build-tools/36.0.0/aapt"
+if [ -x "$aapt_bin" ]; then
+  echo "Checking merged APK manifest for accidental network permissions"
+  manifest_permissions="$("$aapt_bin" dump permissions "$apk")"
+  if printf '%s\n' "$manifest_permissions" | grep -E 'android[.]permission[.](INTERNET|ACCESS_NETWORK_STATE|ACCESS_LOCAL_NETWORK)'; then
+    echo "ERROR: APK has unexpected network permission despite offline design" >&2
+    exit 24
+  fi
+fi
 mkdir -p build/smoke
 echo "Emulator API: $(adb shell getprop ro.build.version.sdk | tr -d '\r')"
 echo "Current PackageManager state:"
