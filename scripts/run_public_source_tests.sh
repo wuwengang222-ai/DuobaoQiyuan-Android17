@@ -9,6 +9,8 @@ javac -encoding UTF-8 -d "$tmp" \
   tests/TestIntegratedHandoff.java tests/TestStoryEndingOCR.java tests/TestSaveRetry.java
 for t in TestHandoff TestStoryEndingDetector TestIntegratedHandoff TestStoryEndingOCR TestSaveRetry; do java -cp "$tmp" "$t"; done
 node --check app/src/main/assets/duobao_bridge.js
+node --check app/src/main/assets/duobao_phone_ui.js
+node tests/test_phone_layout.js
 node tests/test_bridge.js
 node tests/test_runtime_failclosed.js
 python3 tests/test_fallback_source.py
