@@ -1,0 +1,9 @@
+*.mrp
+*.apk
+*.wasm
+.gradle/
+build/
+app/build/
+local.properties
+*.keystore
+*.jks
