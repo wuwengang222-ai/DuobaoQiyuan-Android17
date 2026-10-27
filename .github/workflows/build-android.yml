@@ -35,7 +35,12 @@ jobs:
           node --check app/src/main/assets/vmrp.js
       - name: Android SDK platform
         run: |
-          sdkmanager 'platforms;android-37' 'build-tools;37.0.0'
+          sdkmanager --channel=3 'platforms;android-37.0' 'build-tools;37.0.0'
+          # AGP compileSdk 37 may still resolve the legacy unversioned path:
+          if [ ! -e "$ANDROID_SDK_ROOT/platforms/android-37" ]; then
+            ln -s android-37.0 "$ANDROID_SDK_ROOT/platforms/android-37"
+          fi
+          test -f "$ANDROID_SDK_ROOT/platforms/android-37/android.jar"
           echo "SDK command-line tools: $(sdkmanager --version)"
       - name: Compile and static-check APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
