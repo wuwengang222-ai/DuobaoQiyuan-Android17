@@ -1,0 +1,72 @@
+name: Verify both historical MRP games on Android 17 (ephemeral, no APK release)
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/real-games-ci.yml']
+permissions:
+  contents: read
+jobs:
+  verify-game-files-and-launch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Download historical copies ONLY to this ephemeral runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/games
+          curl -fLSs --retry 3 --connect-timeout 20 --max-time 120 \
+            https://mrp.gddhy.net/mrp-files/319011_240320_gdbqy.mrp \
+            -o app/src/main/assets/games/part1.mrp
+          curl -fLSs --retry 3 --connect-timeout 20 --max-time 120 \
+            https://mrp.gddhy.net/mrp-files/399433_240320_gdbqyb.mrp \
+            -o app/src/main/assets/games/part2.mrp
+          # Require byte-for-byte identity with the two original files provided by the user.
+          python3 scripts/verify_game_assets.py
+      - name: Verify source-only tests
+        run: bash scripts/run_public_source_tests.sh
+      - name: Obtain VMRP's real WebAssembly engine
+        run: python3 scripts/prepare_runtime.py
+      - name: Validate real runtime and exact original game hashes
+        run: node scripts/verify_runtime_assets.js
+      - name: Compile an ephemeral APK for compatibility testing (NOT released)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+          gradle :app:assembleDebug --no-daemon
+          test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -c /dev/kvm
+      - name: Android 17 API37 actual two-MRP startup and manual chapter switch
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: '37.0'
+          target: google_apis
+          arch: x86_64
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            python3 -m pip install Pillow
+            bash scripts/ci_emulator_smoke.sh
+            echo 'NOTE: Not a completed story playthrough, no actual auto-ending validation.'
+      - name: Remove copyrighted game files, temporary screenshots and APK
+        if: always()
+        shell: bash
+        run: |
+          rm -rf app/src/main/assets/games app/src/main/assets/fs app/build build/smoke
+          rm -f app/src/main/assets/vmrp.wasm app/src/main/assets/vmrp.js
+          echo 'No game binaries or APK artifacts are published by this workflow.'
