@@ -1,7 +1,9 @@
 plugins { id 'com.android.application' }
 android {
   namespace 'com.duobao.duology'
-  compileSdk 37
+  // Compile against stable API 36: APK remains runnable on Android 17 (API 37).
+  // SDK 37.0 is installed under a minor-version path that AGP 8.9 cannot resolve.
+  compileSdk 36
   defaultConfig {
     applicationId 'com.duobao.duology'
     minSdk 26
