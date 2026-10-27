@@ -27,6 +27,16 @@ for retry in range(9):
             x1,y1,x2,y2=map(int,found.groups())
             if x2>x1 and y2>y1:
                 nodes[label]=((x1+x2)/2,(y1+y2)/2)
+    # Android 16/17 displays a one-time system "Got it" immersive-mode
+    # tutorial above every app when bars are hidden for the first time.
+    # Dismiss it before measuring our own WebView buttons.
+    if 'Got it' in nodes and not '↑' in nodes:
+        x,y=nodes['Got it']
+        print('Dismiss Android immersive-mode onboarding prompt')
+        adb('shell','input','tap',str(int(x)),str(int(y)))
+        nodes={}
+        time.sleep(2)
+        continue
     if all(k in nodes for k in ['↑','↓','←','→','OK','菜单','返回','1','2','3','*','0','#']):
         break
     time.sleep(2)
