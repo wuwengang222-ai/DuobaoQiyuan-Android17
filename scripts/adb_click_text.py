@@ -32,17 +32,30 @@ deadline = time.monotonic() + args.timeout
 while time.monotonic() < deadline:
     try:
         root = dump()
+        candidates = []
         for node in root.iter('node'):
-            label = node.attrib.get('text', '') + ' ' + node.attrib.get('content-desc', '')
-            if args.label not in label:
+            text_value = node.attrib.get('text', '').strip()
+            content_desc = node.attrib.get('content-desc', '').strip()
+            label = text_value or content_desc
+            if not label or args.label not in label:
                 continue
-            b = node.attrib.get('bounds', '')
-            found = re.match(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', b)
+            bounds = node.attrib.get('bounds', '')
+            found = re.match(r'\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]', bounds)
             if not found:
                 continue
             x1, y1, x2, y2 = map(int, found.groups())
-            adb('shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
-            print(f'TAPPED {args.label!r} ({x1+x2>>1},{y1+y2>>1})')
+            is_clickable = node.attrib.get('clickable', 'false') == 'true'
+            exact = label == args.label
+            # Never tap dialog explanation text: it can contain the
+            # action name but is not a clickable button.
+            if not is_clickable:
+                continue
+            candidates.append((not exact, y2-y1, x2-x1, label, (x1+x2)//2, (y1+y2)//2))
+        if candidates:
+            candidates.sort()
+            _, _, _, chosen_label, x, y = candidates[0]
+            adb('shell', 'input', 'tap', str(x), str(y))
+            print(f'TAPPED {args.label!r} via clickable {chosen_label!r} ({x},{y})')
             raise SystemExit(0)
     except (OSError, ET.ParseError, RuntimeError, subprocess.CalledProcessError):
         pass
