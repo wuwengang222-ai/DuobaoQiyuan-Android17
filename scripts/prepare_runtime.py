@@ -103,13 +103,13 @@ def main():
     if '</style>' in phone_css.lower() or '</script>' in phone_js.lower():
         raise RuntimeError('Unsafe closing HTML tag in phone UI bundle')
     html = html.replace('</head>', '<style id="duobao-phone-style">\n'
-                        + phone_css + '\\n</style></head>', 1)
+                        + phone_css + '\n</style></head>', 1)
     insertion_point = '<script src="./duobao_bridge.js"></script>'
     if html.count(insertion_point) != 1:
         raise RuntimeError('VMRP HTML bridge location unexpectedly changed')
     html = html.replace(insertion_point,
                         '<script id="duobao-phone-ui">\n' + phone_js
-                        + '\\n</script>\n' + insertion_point, 1)
+                        + '\n</script>\n' + insertion_point, 1)
     # Preserve the upstream keymap DOM and ID fields, but simplify the original
     # donation/help text. It is not required to run the game.
     index = assets / 'index.html'
