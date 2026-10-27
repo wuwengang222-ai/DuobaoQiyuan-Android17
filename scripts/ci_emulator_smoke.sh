@@ -25,8 +25,10 @@ wait_for() {
 }
 
 adb shell getprop ro.build.version.sdk > build/smoke/api_level.txt
-if ! grep -q '^37$' build/smoke/api_level.txt; then
-  echo 'EMULATOR FAILURE: not API 37' >&2; exit 1
+EXPECTED_API="${EXPECTED_API:-37}"
+EXPECTED_API="${EXPECTED_API%%.*}"
+if ! grep -qx "$EXPECTED_API" build/smoke/api_level.txt; then
+  echo "EMULATOR FAILURE: expected API $EXPECTED_API, got $(cat build/smoke/api_level.txt)" >&2; exit 1
 fi
 wait_for 'VMRP WASM postRun reached, chapter=1' 90
 wait_for 'Canvas changed after engine startup; chapter=1' 45
@@ -61,5 +63,5 @@ for chapter in (1,2):
 PY
 # Even a nonuniform screenshot cannot prove gameplay. The CI artifact must
 # still be labeled an emulator smoke test, not a verified complete game.
-echo 'PASS: Android 17 launched VM and manual transition loaded second VM.'
+echo "PASS: Android API $EXPECTED_API launched VMRP and manual transition loaded second VMRP fixture."
 echo 'NOT PROVEN: both games playable, OCR accuracy, automatic plot handoff, OnePlus 13.'
