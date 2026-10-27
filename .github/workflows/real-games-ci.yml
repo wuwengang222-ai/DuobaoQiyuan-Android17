@@ -6,6 +6,7 @@ on:
       - '.github/workflows/real-games-ci.yml'
       - 'analysis/verify_ending_in_mrp.py'
       - 'scripts/ci_emulator_smoke.sh'
+      - 'scripts/adb_click_text.py'
       - 'app/src/main/java/com/duobao/duology/MainActivity.java'
 permissions:
   contents: read
