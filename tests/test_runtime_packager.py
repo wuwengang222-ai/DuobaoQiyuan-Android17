@@ -4,7 +4,7 @@
 The synthetic WASM here is never included in app assets or deliverables.
 Its only role is exercising the package-building and fail-closed guards.
 """
-import importlib.util, json, tempfile, pathlib, shutil
+import importlib.util, json, tempfile, pathlib, shutil, subprocess, re
 from unittest.mock import patch
 root = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('duobao_prepare', root/'scripts/prepare_runtime.py')
@@ -38,6 +38,13 @@ with tempfile.TemporaryDirectory(prefix='duobao_package_test_') as td:
     assert 'duobao_bridge.js' in index and 'src="./fs.js"' not in index
     assert 'id="duobao-phone-ui"' in index and 'id="duobao-phone-style"' in index
     assert '#duobao-navigation' in index and 'duobao-screen-toggle' in index
+    script = re.search(r'<script id="duobao-phone-ui">(.*?)</script>', index, re.S)
+    assert script, 'Bundled inline phone JS missing'
+    embedded = p.assets/'injected_phone_ui_check.js'
+    embedded.write_text(script.group(1), encoding='utf-8')
+    # Validate the *generated HTML script*, not just the source .js file.
+    # This catches accidental literal backslash-n characters at script boundaries.
+    subprocess.run(['node', '--check', str(embedded)], check=True)
     assert index.index('var Module = {') < index.index('duobao_bridge.js') < index.index('src="./vmrp.js"')
     manifest=json.loads((p.assets/'integrity-manifest.json').read_text())
     assert manifest['games/part1.mrp']['bytes'] > 360000
