@@ -5,6 +5,12 @@ import android.app.AlertDialog;
 import android.widget.FrameLayout;
 import android.widget.Button;
 import android.view.Gravity;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.os.Build;
 import android.view.ViewGroup;
 import android.widget.Toast;
 import android.annotation.SuppressLint;
@@ -42,6 +48,16 @@ public final class MainActivity extends Activity {
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        // True Android immersive mode, not merely a large HTML canvas.
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                             WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams attrs = getWindow().getAttributes();
+            attrs.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(attrs);
+        }
+        applyImmersiveMode();
         chapters.restore(getPreferences(MODE_PRIVATE).getBoolean("chapter1_finished", false));
         int current = chapters.chapter();
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
@@ -200,11 +216,38 @@ public final class MainActivity extends Activity {
         // Keep chapter menu away from the Android status-bar gesture region,
         // especially on compact 320x640 emulator profiles (the old control
         // occupied y=0..44 and tapping its center hit the system status bar).
-        lp.topMargin = (int) (48 * getResources().getDisplayMetrics().density);
+        lp.topMargin = (int) (6 * getResources().getDisplayMetrics().density);
         root.addView(chapterOptions, lp);
         setContentView(root);
         loadChapter(current);
     }
+    /** Hide system status/navigation bars; a swipe temporarily reveals them. */
+    private void applyImmersiveMode() {
+        View decor = getWindow().getDecorView();
+        // Also retain the legacy flags for Android 8–10.
+        decor.setSystemUiVisibility(
+              View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            | View.SYSTEM_UI_FLAG_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController controller = decor.getWindowInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsBehavior(
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                controller.hide(WindowInsets.Type.statusBars() |
+                                WindowInsets.Type.navigationBars());
+            }
+        }
+    }
+
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) applyImmersiveMode();
+    }
+
     private void showChapterMenu() {
         Log.i("DuobaoRuntime", "Opening chapter options dialog; chapter=" + chapters.chapter());
         if (chapters.chapter() == 2) {
