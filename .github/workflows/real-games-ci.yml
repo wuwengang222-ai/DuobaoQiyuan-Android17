@@ -10,6 +10,7 @@ on:
       - 'app/src/main/assets/duobao_phone_ui.css'
       - 'app/src/main/assets/duobao_phone_ui.js'
       - 'scripts/prepare_runtime.py'
+      - 'tests/test_runtime_packager.py'
       - 'scripts/ci_install_and_launch.sh'
       - 'scripts/adb_click_text.py'
       - 'app/src/main/java/com/duobao/duology/MainActivity.java'
