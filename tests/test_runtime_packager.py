@@ -29,9 +29,15 @@ with tempfile.TemporaryDirectory(prefix='duobao_package_test_') as td:
     (p.assets/'games/part1.mrp').write_bytes((root/'app/src/main/assets/games/part1.mrp').read_bytes())
     (p.assets/'games/part2.mrp').write_bytes((root/'app/src/main/assets/games/part2.mrp').read_bytes())
     (p.assets/'duobao_bridge.js').write_bytes((root/'app/src/main/assets/duobao_bridge.js').read_bytes())
+    # The runtime packager now inlines the user-interface source into HTML;
+    # temp assets must include both files just like a genuine source checkout.
+    for name in ('duobao_phone_ui.css', 'duobao_phone_ui.js'):
+        (p.assets/name).write_bytes((root/'app/src/main/assets'/name).read_bytes())
     with patch.object(p, 'fetch', fake_fetch): p.main()
     index=(p.assets/'index.html').read_text()
     assert 'duobao_bridge.js' in index and 'src="./fs.js"' not in index
+    assert 'id="duobao-phone-ui"' in index and 'id="duobao-phone-style"' in index
+    assert '#duobao-navigation' in index and 'duobao-screen-toggle' in index
     assert index.index('var Module = {') < index.index('duobao_bridge.js') < index.index('src="./vmrp.js"')
     manifest=json.loads((p.assets/'integrity-manifest.json').read_text())
     assert manifest['games/part1.mrp']['bytes'] > 360000
