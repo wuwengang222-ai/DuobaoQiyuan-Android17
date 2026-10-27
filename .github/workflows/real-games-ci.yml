@@ -6,6 +6,7 @@ on:
       - '.github/workflows/real-games-ci.yml'
       - 'analysis/verify_ending_in_mrp.py'
       - 'scripts/ci_emulator_smoke.sh'
+      - 'scripts/ci_install_and_launch.sh'
       - 'scripts/adb_click_text.py'
       - 'app/src/main/java/com/duobao/duology/MainActivity.java'
 permissions:
@@ -77,6 +78,18 @@ jobs:
           arch: x86_64
           emulator-options: -no-window -no-snapshot -gpu swiftshader -noaudio -no-boot-anim -no-metrics -camera-back none
           script: python3 -m pip install Pillow && EXPECTED_API='${{ matrix.emulator_api }}' bash scripts/ci_emulator_smoke.sh
+      - name: Archive Android service logs on failure (no screenshots / game binaries)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-service-failure-${{ matrix.emulator_api }}
+          path: |
+            build/smoke/*_error.log
+            build/smoke/package_diagnostics.txt
+            build/smoke/failed_native_ui_labels.txt
+            build/smoke/ui_failure_logcat.txt
+          if-no-files-found: ignore
+          retention-days: 1
       - name: Remove copyrighted game files, temporary screenshots and APK
         if: always()
         shell: bash
