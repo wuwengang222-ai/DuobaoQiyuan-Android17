@@ -12,34 +12,7 @@ echo "Actual API: $actual_api"
 test "$actual_api" = "$EXPECTED_API" || {
   echo "SDK mismatch: expected $EXPECTED_API, got $actual_api" >&2; exit 2;
 }
-echo "Wait for Android PackageManager registration and readiness"
-stable=0
-for attempt in $(seq 1 45); do
-  if adb shell cmd package list packages -3 >/dev/null 2>&1; then
-    stable=$((stable+1))
-    if (( stable >= 3 )); then break; fi
-  else
-    stable=0
-  fi
-  sleep 2
-done
-if (( stable < 3 )); then
-  echo "PackageManager service did not stabilize after boot" >&2
-  adb logcat -d -v time -t 300 -s AndroidRuntime:E SystemServer:E ActivityManager:E PackageManager:E | tail -120 || true
-  exit 5
-fi
-echo "PackageManager registered; performing installation"
-echo "Emulator storage available before APK install:"
-adb shell df -h /data || true
-if ! adb install -r "$apk"; then
-  echo 'ADB install failed. Inspect /data free space and package manager logs.' >&2
-  adb shell df -h /data || true
-  adb logcat -d -v time -t 300 -s AndroidRuntime:E SystemServer:E ActivityManager:E PackageManager:E | tail -150 || true
-  adb shell pm list packages | wc -l || true
-  exit 3
-fi
-adb logcat -c
-adb shell am start -n com.duobao.duology/.MainActivity
+bash scripts/ci_install_and_launch.sh "$apk"
 for i in $(seq 1 75); do
   if adb logcat -d -s DuobaoRuntime:I | grep -Fq 'VMRP WASM postRun reached, chapter=1'; then
     echo "VMRP postRun signal confirmed on Android API $EXPECTED_API"
