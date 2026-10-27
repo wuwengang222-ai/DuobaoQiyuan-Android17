@@ -62,7 +62,12 @@ for trial in 1 2 3 4 5; do
     launched=1
     break
   fi
-  echo "Activity manager didn't resolve launcher; wait/retry" >&2
+  echo "Explicit component failed; trying manifest MAIN/LAUNCHER resolution" >&2
+  if adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -p "$pkg"; then
+    launched=1
+    break
+  fi
+  echo "Activity manager didn't resolve the launcher; wait/retry" >&2
   adb shell pm path "$pkg" || true
   sleep 4
 done
