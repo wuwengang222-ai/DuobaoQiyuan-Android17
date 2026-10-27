@@ -9,6 +9,7 @@ import re
 import subprocess
 import time
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 parser = argparse.ArgumentParser()
 parser.add_argument('label')
@@ -46,4 +47,25 @@ while time.monotonic() < deadline:
     except (OSError, ET.ParseError, RuntimeError, subprocess.CalledProcessError):
         pass
     time.sleep(1.0)
+try:
+    snapshot = dump()
+    rows = []
+    for node in snapshot.iter('node'):
+        label = node.attrib.get('text', '') + ' ' + node.attrib.get('content-desc', '')
+        if label.strip():
+            rows.append((label.strip(), node.attrib.get('bounds', ''), node.attrib.get('clickable', '')))
+    print('UI labels currently visible: ' + repr(rows[:100]))
+    Path('build/smoke').mkdir(parents=True, exist_ok=True)
+    Path('build/smoke/failed_native_ui_labels.txt').write_text(
+        repr(rows) + '\\nexpected: ' + args.label, encoding='utf-8')
+except Exception as e:
+    print('Unable to collect UI tree: ' + repr(e))
+try:
+    diag = subprocess.run(['adb','logcat','-d','-v','brief','-s','DuobaoRuntime:I','AndroidRuntime:E','ActivityTaskManager:I'],
+                          capture_output=True, text=True, errors='replace').stdout
+    Path('build/smoke').mkdir(parents=True, exist_ok=True)
+    Path('build/smoke/ui_failure_logcat.txt').write_text(diag, encoding='utf-8')
+    print('Recent runtime events:\\n' + '\\n'.join(diag.splitlines()[-35:]))
+except Exception as e:
+    print('Could not collect runtime logcat: ' + repr(e))
 raise SystemExit(f'Unable to tap {args.label!r} using Android native UI hierarchy')
