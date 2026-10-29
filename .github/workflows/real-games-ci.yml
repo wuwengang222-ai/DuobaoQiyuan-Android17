@@ -64,6 +64,11 @@ jobs:
           sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
           gradle :app:assembleDebug --no-daemon
           test -s app/build/outputs/apk/debug/app-debug.apk
+      - name: Verify real-game APK installation format before emulator boot
+        run: |
+          python3 scripts/check_apk_install.py app/build/outputs/apk/debug/app-debug.apk
+          zipalign -c -P 16 -v 4 app/build/outputs/apk/debug/app-debug.apk
+          apksigner verify --verbose app/build/outputs/apk/debug/app-debug.apk
       - name: Enable KVM
         shell: bash
         run: |
