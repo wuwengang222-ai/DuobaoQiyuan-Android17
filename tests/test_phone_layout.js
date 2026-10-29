@@ -14,7 +14,13 @@ function node(id=''){
  appendChild(x){this.children.push(x);return x},
  replaceChildren(...xs){this.children=xs},
  setAttribute(k,v){this.attributes[k]=v},
- addEventListener(k,fn){this['on_'+k]=fn}};
+ addEventListener(k,fn){this['on_'+k]=fn},
+ querySelector(){return null},
+ getBoundingClientRect(){
+  const keyboardOrder={'key_up':1,'key_down':3,'key_1':5,'key_9':7,'key_pound':8};
+  const y=(keyboardOrder[id]||2)*45;
+  return {top:y,bottom:y+40,left:5,right:100,width:95,height:40};
+ }};
  return n;
 }
 const elements=Object.fromEntries([...ids,'main','keymap','screen','canvas','dialog'].map(x=>[x,node(x)]));
@@ -23,7 +29,8 @@ elements.canvas.width=240;elements.canvas.height=320;
 const document={getElementById:id=>elements[id]||null,createElement:t=>node(t)};
 const context={document,window:{addEventListener(){}},console:{info(){},error(x){throw Error(x)}},
  requestAnimationFrame:fn=>fn(),ResizeObserver:class{constructor(fn){this.fn=fn}observe(){}},
- MutationObserver:class{observe(){}} ,setTimeout:fn=>fn()};
+ MutationObserver:class{observe(){}} ,setTimeout:fn=>fn(),
+ getComputedStyle(){return {display:'grid'}}};
 vm.runInNewContext(code,context);
 const nav=elements.keymap.children[0],nums=elements.keymap.children[1];
 assert.equal(nav.id,'duobao-navigation');
