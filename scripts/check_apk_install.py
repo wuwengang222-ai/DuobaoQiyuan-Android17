@@ -15,7 +15,7 @@ def data_offset(apk, entry):
     """Read the LOCAL header: its extra length may differ from the central entry."""
     apk.seek(entry.header_offset)
     header = apk.read(30)
-    if len(header) != 30 or header[:4] != b"PK\\x03\\x04":
+    if len(header) != 30 or header[:4] != bytes.fromhex("504b0304"):
         raise ValueError(f"invalid ZIP local header: {entry.filename}")
     name_len, extra_len = struct.unpack_from("<HH", header, 26)
     return entry.header_offset + 30 + name_len + extra_len
@@ -46,7 +46,7 @@ def verify(path):
         else:
             raw.seek(-22, 2)
             eocd = raw.read(22)
-            if eocd[:4] != b"PK\\x05\\x06":
+            if eocd[:4] != bytes.fromhex("504b0506"):
                 errors.append("unrecognized ZIP EOCD: check APK signature separately")
             else:
                 cd_offset = struct.unpack_from("<I", eocd, 16)[0]
