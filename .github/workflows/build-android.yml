@@ -41,6 +41,11 @@ jobs:
           echo "SDK command-line tools: $(sdkmanager --version)"
       - name: Compile and static-check APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
+      - name: Verify installation format before emulator boot
+        run: |
+          python3 scripts/check_apk_install.py app/build/outputs/apk/debug/app-debug.apk
+          zipalign -c -P 16 -v 4 app/build/outputs/apk/debug/app-debug.apk
+          apksigner verify --verbose app/build/outputs/apk/debug/app-debug.apk
       - name: API 37 emulator launch and manual two-chapter smoke test (NOT a playthrough)
         uses: reactivecircus/android-emulator-runner@v2
         with:
